@@ -1,8 +1,19 @@
 var Parallel = function(config){
-    this.total = config.total;  
+    this.total = config.total;
+    this.timeout = config.timeout;   
+    this.timer = null; 
+    this.finished = false; 
     this.storage = []; 
     this.recieved = 0; 
     this.handler = null; 
+
+    if(this.timeout){
+        var self = this; 
+        this.timer = setTimeout(function(){
+            self.onReady(); 
+        }, this.timeout); 
+    }
+
 };  
 
 Parallel.prototype.update = function(name, data){
@@ -25,7 +36,13 @@ Parallel.prototype.update = function(name, data){
 }; 
 
 Parallel.prototype.onReady = function(){
+    if(this.finished)
+        return console.log('timeout was hit, current dataset was sent'); 
+    
+    if(this.timer) clearTimeout(this.timer); 
+
     console.log('calling handler and passing complete dataset'); 
+    this.finished = true; 
     this.handler(this.storage); 
 }; 
 
@@ -34,8 +51,9 @@ Parallel.prototype.setHandler = function(fn){
         this.handler = fn; 
 }
 
-module.exports = function(numberOfUpdates){
+module.exports = function(numberOfUpdates, timeout){
     return new Parallel({
-        total: numberOfUpdates || 5 
+        total: numberOfUpdates || 5, 
+        timeout:  timeout || 5000 
     }); 
 }; 
